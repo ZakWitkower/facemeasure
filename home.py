@@ -431,6 +431,46 @@ def calculate_fwhr(landmarks_dict):
     return width / height if height != 0 else 0
 
 
+def calculate_canthal_tilt_deg(x_med, y_med, x_lat, y_lat):
+    """Calculate signed canthal tilt in degrees from medial to lateral.
+
+    Image coordinates increase downward, so the Y difference is inverted
+    before calculating the angle. The result is wrapped to [-90, 90], where
+    positive values mean the lateral canthus is higher than the medial canthus.
+    """
+    dx = float(x_lat) - float(x_med)
+    dy = -(float(y_lat) - float(y_med))
+    angle = float(np.degrees(np.arctan2(dy, dx)))
+
+    if angle > 90:
+        return 180 - angle
+    if angle < -90:
+        return -180 - angle
+    return angle
+
+
+def calculate_canthal_tilt_metrics(landmarks_dict):
+    """Return right, left, mean, and asymmetry canthal-tilt metrics.
+
+    Dlib-68 eye landmarks follow the convention used in the supplied R code:
+    right eye medial=39/lateral=36 and left eye medial=42/lateral=45.
+    """
+    right = calculate_canthal_tilt_deg(
+        landmarks_dict["LM_39_X"], landmarks_dict["LM_39_Y"],
+        landmarks_dict["LM_36_X"], landmarks_dict["LM_36_Y"],
+    )
+    left = calculate_canthal_tilt_deg(
+        landmarks_dict["LM_42_X"], landmarks_dict["LM_42_Y"],
+        landmarks_dict["LM_45_X"], landmarks_dict["LM_45_Y"],
+    )
+    return {
+        "CanthalTilt_R": right,
+        "CanthalTilt_L": left,
+        "CanthalTilt_Mean": (right + left) / 2,
+        "CanthalTilt_Asym": right - left,
+    }
+
+
 def procrustes_align_landmark_arrays(landmark_arrays, max_iterations=10, tolerance=1e-7):
     """Align 68-point landmark arrays with Generalized Procrustes Analysis.
 
@@ -551,9 +591,12 @@ def apply_procrustes_to_results(results):
         try:
             result["Eyebrow_V"] = round(calculate_eyebrow_v_shape(result), 4)
             result["fWHR"] = round(calculate_fwhr(result), 4)
+            result.update({k: round(v, 4) for k, v in calculate_canthal_tilt_metrics(result).items()})
         except Exception:
             result["Eyebrow_V"] = None
             result["fWHR"] = None
+            for metric in ("CanthalTilt_R", "CanthalTilt_L", "CanthalTilt_Mean", "CanthalTilt_Asym"):
+                result[metric] = None
 
 
 # ---------------------------------------------------------------------------
@@ -610,9 +653,12 @@ def analyze_image(detector, img_array, detect_aus=False, detect_emotions=False, 
     try:
         result["Eyebrow_V"] = round(calculate_eyebrow_v_shape(result), 4)
         result["fWHR"] = round(calculate_fwhr(result), 4)
+        result.update({k: round(v, 4) for k, v in calculate_canthal_tilt_metrics(result).items()})
     except Exception:
         result["Eyebrow_V"] = None
         result["fWHR"] = None
+        for metric in ("CanthalTilt_R", "CanthalTilt_L", "CanthalTilt_Mean", "CanthalTilt_Asym"):
+            result[metric] = None
 
     # --- Optional: Action Units (HOG extraction + XGB - slowest step) ---
     if detect_aus:
@@ -939,7 +985,10 @@ if submitted:
 
         # Reorder columns: most useful first, raw landmarks last
         present = set(df.columns)
-        metric_cols = [c for c in ("fWHR", "Eyebrow_V") if c in present]
+        metric_cols = [c for c in (
+            "fWHR", "Eyebrow_V", "CanthalTilt_R", "CanthalTilt_L",
+            "CanthalTilt_Mean", "CanthalTilt_Asym",
+        ) if c in present]
         au_cols = [c for c in AU_COLUMNS if c in present]
         emotion_cols = [c for c in EMOTION_COLUMNS if c in present]
         pose_cols = [c for c in ("Pitch", "Roll", "Yaw") if c in present]
@@ -950,7 +999,7 @@ if submitted:
         df = df[[c for c in ordered + other_cols if c in present]]
 
         # Summary of features computed
-        feat_list = ["Landmarks", "fWHR", "Eyebrow V"]
+        feat_list = ["Landmarks", "fWHR", "Eyebrow V", "Canthal tilt"]
         if detect_aus_flag:
             feat_list.append("Action Units")
         if detect_emotions_flag:

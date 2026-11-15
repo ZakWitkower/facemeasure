@@ -9,7 +9,7 @@
 ## 🚀 Features
 
 * **Facial Landmark Detection**: Instantly extract 68 facial landmarks from each face using py-feat's modular detection pipeline.
-* **Derived Metrics**: Automatically computes facial width-to-height ratio (fWHR) and eyebrow V-shape index from detected landmarks.
+* **Derived Metrics**: Automatically computes facial width-to-height ratio (fWHR), eyebrow V-shape index, and signed canthal tilt (right, left, mean, and asymmetry) from detected landmarks.
 * **Action Unit Detection**: Optionally detect 20 facial action units (AU01–AU43) using HOG features and XGBoost classifiers.
 * **Emotion Classification**: Optionally classify 7 basic emotions (anger, disgust, fear, happiness, sadness, surprise, neutral).
 * **Head Pose Estimation**: Optionally estimate head orientation (pitch, roll, yaw) via img2pose.
@@ -88,7 +88,7 @@ pytest test_pipeline.py -v
 
 ## 📝 Output
 
-* **CSV**: All metrics and landmarks for each image (columns: `Image_Name`, `fWHR`, `Eyebrow_V`, `AU01`–`AU43`, emotions, `Pitch`, `Roll`, `Yaw`, `LM_0_X`, `LM_0_Y`, ...).
+* **CSV**: All metrics and landmarks for each image (columns include `Image_Name`, `fWHR`, `Eyebrow_V`, `CanthalTilt_R`, `CanthalTilt_L`, `CanthalTilt_Mean`, `CanthalTilt_Asym`, `AU01`–`AU43`, emotions, `Pitch`, `Roll`, `Yaw`, and landmarks).
 * **JSON**: Structured array of objects with the same keys.
 * **Visualization**: Original and landmark-overlaid images shown side by side.
 
