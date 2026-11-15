@@ -18,6 +18,8 @@ from PIL import Image
 # ---------------------------------------------------------------------------
 from home import (
     calculate_fwhr,
+    calculate_canthal_tilt_deg,
+    calculate_canthal_tilt_metrics,
     calculate_eyebrow_v_shape,
     procrustes_align_landmark_arrays,
     apply_procrustes_to_results,
@@ -114,6 +116,22 @@ class TestFWHR:
         d1 = _make_landmark_dict(pts)
         d2 = _make_landmark_dict(pts * 2.0)
         assert pytest.approx(calculate_fwhr(d1), rel=1e-4) == calculate_fwhr(d2)
+
+
+class TestCanthalTilt:
+    def test_horizontal_is_zero(self):
+        assert calculate_canthal_tilt_deg(10, 20, 30, 20) == pytest.approx(0)
+
+    def test_lateral_higher_is_positive(self):
+        assert calculate_canthal_tilt_deg(10, 20, 30, 10) == pytest.approx(26.5651, rel=1e-4)
+
+    def test_metrics_use_dlib_eye_indices(self):
+        d = _make_landmark_dict(_default_landmarks())
+        metrics = calculate_canthal_tilt_metrics(d)
+        assert metrics["CanthalTilt_R"] == pytest.approx(0)
+        assert metrics["CanthalTilt_L"] == pytest.approx(0)
+        assert metrics["CanthalTilt_Mean"] == pytest.approx(0)
+        assert metrics["CanthalTilt_Asym"] == pytest.approx(0)
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +303,7 @@ class TestAnalyzeImage:
         assert "_Raw_Landmarks" in result
         assert "fWHR" in result
         assert "Eyebrow_V" in result
+        assert "CanthalTilt_Mean" in result
         assert "Error" not in result
 
     def test_no_face_returns_error(self):
