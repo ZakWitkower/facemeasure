@@ -48,18 +48,6 @@ def load_lottie_url(url: str):
     return r.json()
 
 
-@st.cache_data(show_spinner=False)
-def load_explainer_image(path: str, size=(640, 420)):
-    """Load and cache a uniformly framed, downsampled explainer image."""
-    image = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
-    return ImageOps.pad(
-        image,
-        size,
-        method=Image.Resampling.LANCZOS,
-        color=(248, 250, 251),
-        centering=(0.5, 0.5),
-    )
-
 # ---------------------------------------------------------------------------
 # Page configuration  (must be the first Streamlit call)
 # ---------------------------------------------------------------------------
@@ -799,14 +787,11 @@ def render_output_explainer():
         "and returns the X- and Y-coordinate for each landmark."
     )
 
-    original_image = load_explainer_image("static/1_original.png")
-    landmarks_image = load_explainer_image("static/5_landmarksClose.jpeg")
-
     original_col, landmarks_col = st.columns(2)
     with original_col:
-        st.image(original_image, caption="Original image", use_container_width=True)
+        st.image("static/1_original_small.jpg", caption="Original image", use_container_width=True)
     with landmarks_col:
-        st.image(landmarks_image, caption="Facial landmarks", use_container_width=True)
+        st.image("static/5_landmarksClose_small.jpg", caption="Facial landmarks", use_container_width=True)
 
 
 def render_metrics_explainer():
@@ -859,8 +844,7 @@ def render_metrics_explainer():
             "indicate a stronger V-shape pattern."
         )
 
-        vshape_image = load_explainer_image("static/Vshape.png", size=(640, 420))
-        st.image(vshape_image, caption="Eyebrow V-shape", use_container_width=True)
+        st.image("static/Vshape_small.png", caption="Eyebrow V-shape", use_container_width=True)
 
         st.markdown(
             "<div style=\"height:1.5rem; margin:1.1rem 0 1.3rem 0; "
@@ -885,8 +869,7 @@ def render_metrics_explainer():
             "average of both eyes (`CanthalTilt_Mean`).**"
         )
 
-        canthal_tilt_image = load_explainer_image("static/CanthalTilt.png", size=(640, 420))
-        st.image(canthal_tilt_image, caption="Canthal tilt", use_container_width=True)
+        st.image("static/CanthalTilt_small.png", caption="Canthal tilt", use_container_width=True)
 
 
 dialog_decorator = getattr(st, "dialog", None) or getattr(st, "experimental_dialog", None)
